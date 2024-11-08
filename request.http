@@ -1,0 +1,7 @@
+# user: "duyldnps32006@fpt.edu.vn",
+#       pass: "xqkp kkmp cjjz zrgo",
+curl -X POST http://localhost:3000/reset-password/bfd8bf9aee60e7aea1687532c832a6cf6db183ff \
+-H "Content-Type: application/json" \
+-d '{
+  "newPassword": "newpassword123"
+}'
