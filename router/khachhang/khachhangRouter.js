@@ -2,10 +2,12 @@ const mongoose = require("mongoose");
 const bcryptjs = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const express = require("express");
-const KhachhangModel = require("../../model/model_khachhang/user");
+const router = express.Router();
+const Khachhang = require("../../model/model_khachhang/user");
+const NhanVien = require("../../model/model_admin/admin");
 const verifyToken = require("../../middleware/token");
 const upload = require("../upload");
-const router = express.Router();
+
 require("dotenv").config();
 
 // Thêm hình ảnh
@@ -18,41 +20,43 @@ router.post("/upload", upload.single("photourl"), (req, res) => {
 
 // Đăng ký người dùng
 router.post("/user/dangky", async (req, res) => {
+  const {
+    tenkhachhang,
+    email,
+    password,
+    phone,
+    address,
+    photoLink, // Nhận photoLink từ yêu cầu
+  } = req.body;
+
+  // Mặc định role là "user", không cần phải gửi role từ client
+  const role = "user";
+
   try {
-    const {
-      tenkhachhang,
-      email,
-      password,
-      phone,
-      photourl,
-      address,
-      position,
-      role,
-    } = req.body;
-
-    if (!["customer", "employee", "manager"].includes(role)) {
-      return res.status(400).json({ message: "Role không hợp lệ." });
-    }
-
-    const existingUser = await KhachhangModel.findOne({ email });
+    // Kiểm tra xem email đã tồn tại chưa
+    const existingUser = await Khachhang.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: "Email đã được sử dụng." });
     }
 
+    // Mã hóa mật khẩu
     const hashPassword = await bcryptjs.hash(password, 10);
 
-    const khachhang = new KhachhangModel({
+    // Tạo người dùng mới
+    const khachhang = new Khachhang({
       tenkhachhang,
       email,
       phone,
-      photourl,
       password: hashPassword,
       address,
-      position,
-      role,
+      role, // Role mặc định là "user"
+      photoLink, // Lưu liên kết hình ảnh vào cơ sở dữ liệu
     });
 
+    // Lưu người dùng vào cơ sở dữ liệu
     await khachhang.save();
+
+    // Trả về phản hồi thành công
     res.status(201).json({ message: "Đăng ký thành công", user: khachhang });
   } catch (error) {
     console.error(error);
@@ -64,10 +68,10 @@ router.post("/user/dangky", async (req, res) => {
 
 // Đăng nhập
 router.post("/user/login", async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    const user = await KhachhangModel.findOne({ email });
+  const { email, password } = req.body;
 
+  try {
+    const user = await Khachhang.findOne({ email });
     if (!user || !(await bcryptjs.compare(password, user.password))) {
       return res.status(401).json({ message: "Sai tài khoản hoặc mật khẩu" });
     }
@@ -77,6 +81,7 @@ router.post("/user/login", async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
+
     const userInfo = user.toObject();
     delete userInfo.password;
 
@@ -89,26 +94,33 @@ router.post("/user/login", async (req, res) => {
   }
 });
 
-// Hiện dữ liệu tất cả người dùng
+// Lấy thông tin người dùng
 router.get("/user", verifyToken, async (req, res) => {
   try {
-    const users = await KhachhangModel.find({}, "-password"); // Không trả về password
-    res.status(200).json(users);
+    if (req.role === "admin" || req.role === "employee") {
+      const userList = await Khachhang.find();
+      return res.status(200).json(userList);
+    } else if (req.role === "user") {
+      const user = await Khachhang.findById(req.userId);
+      if (!user) {
+        return res.status(404).send({ message: "Không tìm thấy người dùng." });
+      }
+      return res.status(200).json(user);
+    } else {
+      return res.status(403).send("Bạn không có quyền truy cập.");
+    }
   } catch (error) {
-    console.error(error);
-    res
-      .status(500)
-      .json({
-        message: "Lỗi khi lấy danh sách người dùng.",
-        error: error.message,
-      });
+    res.status(500).send({ message: "Lỗi máy chủ", error: error.message });
   }
 });
 
 // Hiện dữ liệu theo ID
 router.get("/user/:id", verifyToken, async (req, res) => {
   try {
-    const user = await KhachhangModel.findById(req.params.id, "-password");
+    if (req.role !== "admin" && req.userId !== req.params.id) {
+      return res.status(403).json({ message: "Không có quyền truy cập." });
+    }
+    const user = await Khachhang.findById(req.params.id, "-password");
     if (!user) {
       return res.status(404).json({ message: "Người dùng không tồn tại." });
     }
@@ -121,10 +133,16 @@ router.get("/user/:id", verifyToken, async (req, res) => {
   }
 });
 
-// Xoá dữ liệu
+// Xóa người dùng
 router.delete("/user/:id", verifyToken, async (req, res) => {
   try {
-    const deletedUser = await KhachhangModel.findByIdAndDelete(req.params.id);
+    if (req.role !== "admin") {
+      return res
+        .status(403)
+        .json({ message: "Chỉ admin mới có thể xoá người dùng." });
+    }
+
+    const deletedUser = await Khachhang.findByIdAndDelete(req.params.id);
     if (!deletedUser) {
       return res.status(404).json({ message: "Người dùng không tồn tại." });
     }
@@ -139,28 +157,67 @@ router.delete("/user/:id", verifyToken, async (req, res) => {
   }
 });
 
-// Cập nhật thông tin người dùng
+//123
 router.put("/user/:id", verifyToken, async (req, res) => {
   try {
-    const { currentPassword, newPassword, email } = req.body;
-    const user = await KhachhangModel.findById(req.params.id);
-
-    if (!user) {
-      return res.status(404).json({ message: "Người dùng không tồn tại" });
+    if (req.role !== "admin" && req.userId !== req.params.id) {
+      return res.status(403).json({ message: "Không có quyền truy cập." });
     }
 
-    const isPasswordValid = await bcryptjs.compare(
+    const {
       currentPassword,
-      user.password
-    );
-    if (!isPasswordValid) {
-      return res.status(400).json({ message: "Mật khẩu hiện tại không đúng" });
+      newPassword,
+      email,
+      tenkhachhang,
+      phone,
+      address,
+      photoLink, // Cập nhật photoLink
+    } = req.body;
+
+    // Tìm người dùng
+    const user = await Khachhang.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: "Người dùng không tồn tại." });
     }
 
-    const hashPassword = await bcryptjs.hash(newPassword, 10);
-    const updatedUser = await KhachhangModel.findByIdAndUpdate(
+    // Tạo đối tượng chứa các trường cần cập nhật
+    const updatedData = {};
+
+    // Cập nhật các trường nếu có trong body
+    if (email) updatedData.email = email;
+    if (tenkhachhang) updatedData.tenkhachhang = tenkhachhang;
+    if (phone) updatedData.phone = phone;
+    if (address) updatedData.address = address;
+    if (photoLink) updatedData.photoLink = photoLink; // Cập nhật photoLink nếu có
+
+    // Nếu có mật khẩu mới, băm mật khẩu và cập nhật
+    if (newPassword) {
+      // Nếu có mật khẩu mới, yêu cầu xác minh mật khẩu hiện tại
+      if (!currentPassword) {
+        return res.status(400).json({
+          message: "Mật khẩu hiện tại là bắt buộc để thay đổi mật khẩu.",
+        });
+      }
+
+      // Kiểm tra mật khẩu hiện tại nếu có thay đổi mật khẩu
+      const isPasswordValid = await bcryptjs.compare(
+        currentPassword,
+        user.password
+      );
+      if (!isPasswordValid) {
+        return res
+          .status(400)
+          .json({ message: "Mật khẩu hiện tại không đúng." });
+      }
+
+      // Băm mật khẩu mới
+      updatedData.password = await bcryptjs.hash(newPassword, 10);
+    }
+
+    // Cập nhật thông tin người dùng
+    const updatedUser = await Khachhang.findByIdAndUpdate(
       req.params.id,
-      { password: hashPassword, email },
+      updatedData,
       { new: true }
     );
 
@@ -169,12 +226,10 @@ router.put("/user/:id", verifyToken, async (req, res) => {
       .json({ message: "Cập nhật thông tin thành công", user: updatedUser });
   } catch (error) {
     console.error(error);
-    res
-      .status(500)
-      .json({
-        message: "Có lỗi xảy ra trong quá trình cập nhật.",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Có lỗi xảy ra trong quá trình cập nhật.",
+      error: error.message,
+    });
   }
 });
 
@@ -187,7 +242,7 @@ router.post("/user/check-email", async (req, res) => {
   }
 
   try {
-    const user = await KhachhangModel.findOne({ email });
+    const user = await Khachhang.findOne({ email });
     res.status(200).json({ exists: !!user });
   } catch (error) {
     console.error(error);

@@ -2,7 +2,6 @@ const mongoose = require("mongoose");
 
 const hoaDonSchema = new mongoose.Schema({
   id_ct_datphong: { type: mongoose.Schema.Types.ObjectId, ref: "CT_DatPhong" },
-  id_nhanvien: { type: mongoose.Schema.Types.ObjectId, ref: "NhanVien" },
   id_hinhthucthanhtoan: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "HinhThucThanhToan",

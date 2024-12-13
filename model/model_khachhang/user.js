@@ -1,17 +1,16 @@
-// model_khachhang.js
 const mongoose = require("mongoose");
 
 const KhachhangSchema = new mongoose.Schema({
   tenkhachhang: { type: String, required: true },
-  photourl: { type: String },
+  photoLink: { type: String },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   phone: { type: String },
   address: { type: String },
-  position: { type: String },
   role: {
     type: String,
-    enum: ["customer", "employee", "manager"],
+    enum: ["user"],
+    default: "user",
     required: true,
   },
   resetPasswordToken: { type: String },

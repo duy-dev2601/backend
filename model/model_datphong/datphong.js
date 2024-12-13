@@ -5,17 +5,12 @@ const datPhongSchema = new Schema(
   {
     id_khachhang: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Khachhang",
+      ref: "Khachhang", // Kiểm tra tên model này
       required: true,
     },
     id_nhanvien: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "NhanVien",
-      required: true,
-    },
-    id_phong: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Phong",
+      ref: "Admin", // Đổi từ "NhanVien" thành "Admin"
       required: true,
     },
     NgayDat: { type: Date, required: true },

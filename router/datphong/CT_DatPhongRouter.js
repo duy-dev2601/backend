@@ -6,9 +6,8 @@ const DatPhong = require("../../model/model_datphong/datphong");
 const app = express.Router();
 app.use(express.json());
 
-// Thêm chi tiết đặt phòng
 app.post("/ct_datphong", async (req, res) => {
-  const { id_phong, id_datphong, YeuCau_DacBiet } = req.body;
+  const { id_phong, id_datphong } = req.body;
 
   // Kiểm tra các tham chiếu
   const phongRecord = await Phong.findById(id_phong);
@@ -21,14 +20,17 @@ app.post("/ct_datphong", async (req, res) => {
   const newCtDatPhong = new CT_DatPhong({
     id_phong,
     id_datphong,
-    YeuCau_DacBiet,
   });
 
   try {
-    await newCtDatPhong.save();
-    res.status(201).send(newCtDatPhong);
+    const savedRecord = await newCtDatPhong.save(); // Lưu bản ghi mới
+    res.status(201).send({
+      id_ct_datphong: savedRecord._id, // Trả về _id của bản ghi đã lưu
+      ...savedRecord.toObject(), // Nếu bạn muốn trả lại toàn bộ bản ghi đã lưu
+    });
   } catch (error) {
-    res.status(500).send({ message: "Lỗi máy chủ", error });
+    console.error("Lỗi khi lưu dữ liệu:", error);
+    res.status(500).send({ message: "Lỗi máy chủ", error: error.message });
   }
 });
 

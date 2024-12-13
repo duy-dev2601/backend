@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
-
-const nhanVienSchema = new mongoose.Schema(
+const AdminSchema = new mongoose.Schema(
   {
     TenNhanVien: { type: String, required: true },
     ChucVu: { type: String, required: true },
@@ -8,7 +7,6 @@ const nhanVienSchema = new mongoose.Schema(
     Email: { type: String, required: true, unique: true },
     Password: { type: String, required: true, unique: true },
     SoDienThoai: { type: String, required: true },
-    lichTruc: { type: String, required: true },
     role: {
       type: String,
       enum: ["staff", "admin"],
@@ -20,6 +18,6 @@ const nhanVienSchema = new mongoose.Schema(
   }
 );
 
-const NhanVien = mongoose.model("NhanVien", nhanVienSchema);
+const Admin = mongoose.model("Admin", AdminSchema);
 
-module.exports = NhanVien;
+module.exports = Admin;

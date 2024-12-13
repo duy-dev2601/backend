@@ -1,8 +1,25 @@
 const express = require("express");
 const mongoose = require("mongoose");
+
 mongoose
   .connect("mongodb://localhost:27017/datn")
-  .then(() => console.log("MongoDB connected"))
+  .then(() => {
+    const dbName = "🌟🌟🌟🌟";
+    const host = "🌟🌟o";
+    console.log("\n\x1b[36m╔══════════════════════════════════════╗\x1b[0m");
+    console.log("\x1b[32m║  MongoDB Connected Successfully! 🌟🌟║\x1b[0m");
+    console.log("\x1b[36m╠══════════════════════════════════════╣\x1b[0m");
+    console.log(
+      "\x1b[33m║ 🏷️  Database: " + dbName + "                ║\x1b[0m"
+    );
+    console.log(
+      "\x1b[33m║ 📍  Host: " + host + "                      ║\x1b[0m"
+    );
+    console.log(
+      "\x1b[33m║ 🕒  Timestamp: " + new Date().toLocaleString() + " ║\x1b[0m"
+    );
+    console.log("\x1b[36m╚══════════════════════════════════════╝\x1b[0m\n");
+  })
   .catch((err) => console.log(err));
 const cors = require("cors");
 const bodyParser = require("body-parser");
@@ -10,7 +27,7 @@ const app = express();
 const port = 3002;
 // Người dùng và admin
 const khachhangRouter = require("./router/khachhang/khachhangRouter");
-const nhanvien = require("./router/nhanvien/nhanvienRouter");
+const admin = require("./router/admin/admin");
 //Phòng
 const loaiphongRouter = require("./router/phong/loaiphongRouter");
 const phongRouter = require("./router/phong/phongRouter");
@@ -30,8 +47,9 @@ const HinhThucThanhToan = require("./router/hoadon/hinhthucttRouter");
 const tintuc = require("./router/dichvu/tintucRouter");
 //Gửi mail, quên mật khẩu
 const guimail = require("./router/guimail/guimail");
-//passed
 const forgotPassword = require("./router/quenmatkhau/forgotPassword");
+//Thanh toán
+const thanhtoan = require("./router/thanhtoan/momopayment");
 app.use(cors());
 app.use(function (req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
@@ -54,7 +72,7 @@ app.use(forgotPassword);
 app.use(dichvu);
 app.use(suDungDichVu);
 app.use(CT_DatPhong);
-app.use(nhanvien);
+app.use(admin);
 app.use(datphong);
 app.use(TrangThai);
 app.use(ttPhong);
@@ -64,5 +82,26 @@ app.use(HinhThucThanhToan);
 app.use(tintuc);
 app.use(trangthaidat);
 app.use(HinhThucDatPhong);
-
-app.listen(port, () => console.log(`Đang hoạt động với ${port}`));
+app.use(thanhtoan);
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ limit: "10mb", extended: true }));
+app.listen(port, () => {
+  console.log(
+    "\n\x1b[33m" +
+      "      ______\n" +
+      " ___//__|__\\___\n" +
+      "|  _     _     |\n" +
+      "-(_)---(_)--o-o-\n" +
+      "   🌙🌙🌙🌙🌙🌙🌙🌙\x1b[0m"
+  );
+  console.log(
+    "\x1b[35m============================================\x1b[0m" // Màu tím
+  );
+  console.log(
+    "\x1b[35m|   Server đang hoạt động với Port: " + port + "   |\x1b[0m" // Màu tím
+  );
+  console.log(
+    "\x1b[35m============================================\x1b[0m" // Màu tím
+  );
+  console.log("\x1b[33m🌙🌙🌙🌙🌙🌙🌙🌙🌙🌙🌙🌙🌙🌙🌙🌙🌙🌙🌙🌙\x1b[0m\n");
+});

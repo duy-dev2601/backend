@@ -7,12 +7,10 @@ app.use(express.json());
 // Tất cả loại phòng với tùy chọn lọc theo số lượng
 app.get("/loaiphong", async (req, res) => {
   try {
-    const { soLuong } = req.query; // Lấy tham số soLuong từ query
+    const { soLuong } = req.query;
     let query = {};
-
-    // Nếu có tham số soLuong, thêm vào query
     if (soLuong) {
-      query.soLuong = { $gte: parseInt(soLuong) }; // Lọc loại phòng có soLuong lớn hơn hoặc bằng tham số
+      query.soLuong = { $gte: parseInt(soLuong) };
     }
 
     const lp = await loaiphong.find(query);
@@ -28,18 +26,14 @@ app.get("/loaiphong/:id", async (req, res) => {
     if (!lp) {
       return res.status(404).send({ message: "Loại phòng không tồn tại" });
     }
-
-    // Tìm số lượng phòng liên quan đến loại phòng này
     const countPhong = await phong.countDocuments({ loaiPhongId: lp._id });
-
-    // Định dạng phản hồi bao gồm số lượng phòng
     const response = {
       id: lp._id,
       tenLoai: lp.tenLoai,
       soLuong: lp.soLuong,
       tienNghi: lp.tienNghi,
       giaTien: lp.giaTien,
-      soLuongPhong: countPhong, // Số lượng phòng
+      soLuongPhong: countPhong,
     };
 
     res.status(200).send(response);

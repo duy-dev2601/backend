@@ -13,7 +13,7 @@ app.post("/trangthaidat", async (req, res) => {
     });
   }
   
-  const trangThai = new TrangThaiDat({ // Sử dụng TrangThaiDat ở đây
+  const trangThai = new TrangThaiDat({
     tenTrangThai,
   });
   
